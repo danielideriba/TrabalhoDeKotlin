@@ -5,21 +5,26 @@ import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.support.v4.content.ContextCompat
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import br.com.adrianofpinheiro.trabalhokotlin.BuildConfig
 import br.com.adrianofpinheiro.trabalhokotlin.R
-import br.com.adrianofpinheiro.trabalhokotlin.domain.Carro
-import br.com.adrianofpinheiro.trabalhokotlin.domain.CarroService
-import br.com.adrianofpinheiro.trabalhokotlin.domain.FavoritosService
+import br.com.adrianofpinheiro.trabalhokotlin.domain.*
 import br.com.adrianofpinheiro.trabalhokotlin.domain.event.FavoritoEvent
 import br.com.adrianofpinheiro.trabalhokotlin.domain.event.SaveCarroEvent
 import br.com.adrianofpinheiro.trabalhokotlin.extensions.loadUrl
 import br.com.adrianofpinheiro.trabalhokotlin.extensions.setupToolbar
 import br.com.adrianofpinheiro.trabalhokotlin.fragments.MapaFragment
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.android.synthetic.main.activity_carro.*
 import kotlinx.android.synthetic.main.activity_carro_contents.*
 import org.greenrobot.eventbus.EventBus
 import org.jetbrains.anko.*
+import java.sql.Timestamp
+
+
 
 class CarroActivity : BaseActivity() {
     val carro by lazy { intent.getParcelableExtra<Carro>("carro") }
@@ -90,7 +95,14 @@ class CarroActivity : BaseActivity() {
             val favoritado = FavoritosService.favoritar(carro)
             uiThread {
                 // Alerta de sucesso
-                toast(if (favoritado) R.string.msg_carro_favoritado else R.string.msg_carro_desfavoritado)
+                if (favoritado) {
+                    saveDeviceToken(carro)
+
+                    toast(R.string.msg_carro_favoritado)
+                } else {
+                    removeFavFirebase(carro)
+                    toast(R.string.msg_carro_desfavoritado)
+                }
 
                 // Atualiza cor do botão FAB
                 setFavoriteColor(favoritado)
@@ -99,6 +111,38 @@ class CarroActivity : BaseActivity() {
                 EventBus.getDefault().post(FavoritoEvent(carro))
             }
         }
+    }
+
+    private fun saveDeviceToken(objCarro: Carro) {
+        val favCarro = FavCarro(
+            objCarro.tipo,
+            objCarro.nome,
+            objCarro.desc,
+            objCarro.urlFoto,
+            Timestamp(System.currentTimeMillis())
+        )
+
+        FirebaseDatabase.getInstance().getReference("favoritosCarro")
+            .child(objCarro.nome+"-"+FirebaseAuth.getInstance().currentUser!!.uid)
+            .setValue(favCarro)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    if(BuildConfig.DEBUG) {
+                        Log.d("TAG", "Gravado com sucesso")
+                    }
+                } else {
+                    if(BuildConfig.DEBUG) {
+                        Log.d("TAG", "Errou ao gravar")
+                    }
+                }
+            }
+    }
+
+    private fun removeFavFirebase(objCarro: Carro){
+        val fbdb = FirebaseDatabase.getInstance().getReference("favoritosCarro")
+            .child(objCarro.nome+"-"+FirebaseAuth.getInstance().currentUser!!.uid)
+        fbdb.removeValue()
+        fbdb.removeValue()
     }
 
     // Adiciona as opções Salvar e Deletar no menu

@@ -3,7 +3,6 @@ package br.com.adrianofpinheiro.trabalhokotlin.ui
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Toast
 import br.com.adrianofpinheiro.trabalhokotlin.R
 import br.com.adrianofpinheiro.trabalhokotlin.domain.Usuario
 import br.com.adrianofpinheiro.trabalhokotlin.extensions.toast
@@ -31,7 +30,7 @@ class CriarContaActivity : AppCompatActivity() {
                     if (it.isSuccessful) {
                         saveInRealTimeDatabase()
                     } else {
-                        Toast.makeText(this@CriarContaActivity, it.exception?.message, Toast.LENGTH_SHORT).show()
+                        toast(getString(R.string.msg_error_create_user))
                     }
                 }
             } else {
@@ -54,7 +53,7 @@ class CriarContaActivity : AppCompatActivity() {
                     setResult(RESULT_OK, returnIntent)
                     finish()
                 } else {
-                    toast(getString(R.string.msg_fail))
+                    toast(getString(R.string.msg_error_create_user))
                 }
             }
     }

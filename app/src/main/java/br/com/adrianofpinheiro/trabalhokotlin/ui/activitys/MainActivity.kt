@@ -10,21 +10,28 @@ import android.support.v4.view.GravityCompat
 import android.support.v4.view.ViewPager
 import android.support.v4.widget.DrawerLayout
 import android.support.v7.app.ActionBarDrawerToggle
+import android.support.v7.app.AlertDialog
 import android.support.v7.widget.Toolbar
+import android.util.Log
 import android.view.MenuItem
+import br.com.adrianofpinheiro.trabalhokotlin.BuildConfig
 import br.com.adrianofpinheiro.trabalhokotlin.R
 import br.com.adrianofpinheiro.trabalhokotlin.adapter.TabsAdapter
+import br.com.adrianofpinheiro.trabalhokotlin.domain.FavoritosService
 import br.com.adrianofpinheiro.trabalhokotlin.domain.TipoCarro
+import br.com.adrianofpinheiro.trabalhokotlin.domain.TokenPush
 import br.com.adrianofpinheiro.trabalhokotlin.extensions.setupToolbar
 import br.com.adrianofpinheiro.trabalhokotlin.extensions.toast
 import br.com.adrianofpinheiro.trabalhokotlin.ui.LoginActivity
 import br.com.adrianofpinheiro.trabalhokotlin.ui.activitys.dialogs.SobreActivity
 import br.com.adrianofpinheiro.trabalhokotlin.utils.Prefs
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.android.synthetic.main.activity_main.*
 import com.maxcruz.reactivePermissions.entity.Permission
 import com.maxcruz.reactivePermissions.ReactivePermissions
 import org.jetbrains.anko.*
+import java.sql.Timestamp
 
 
 class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -39,9 +46,47 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         setupNavDrawer()
         setupViewPagerTabs()
 
+        setupPushDialog()
+        if(!Prefs.saveToken.isNullOrEmpty()) {
+            saveDeviceToken(Prefs.saveToken)
+        }
+
         // FAB (variável fab gerada automaticamente pelo Kotlin Extensions)
         fab.setOnClickListener() {
             startActivity<CarroFormActivity>()
+        }
+    }
+
+    private fun saveDeviceToken(token: String?) {
+            val tokenPush = TokenPush(
+                token.toString(),
+                Timestamp(System.currentTimeMillis())
+            )
+
+            FirebaseDatabase.getInstance().getReference("tokenDevices")
+                .child(FirebaseAuth.getInstance().currentUser!!.uid)
+                .setValue(tokenPush)
+                .addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        if(BuildConfig.DEBUG) {
+                            Log.d("TAG", "NEW_TOKEN - ${token} - Gravado com sucesso")
+                        }
+                    } else {
+                        if(BuildConfig.DEBUG) {
+                            Log.d("TAG", "Errou ao gravar token")
+                        }
+                    }
+                }
+    }
+
+    private fun setupPushDialog() {
+        val intent = intent
+        val message = intent.getStringExtra("message")
+        if(!message.isNullOrEmpty()) {
+            AlertDialog.Builder(this)
+                .setTitle("Notification")
+                .setMessage(message)
+                .setPositiveButton("Ok", { dialog, which -> }).show()
         }
     }
 
@@ -116,6 +161,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                         positiveButton(R.string.sim) {
                             // Confirmou em deslogar
                             FirebaseAuth.getInstance().signOut()
+
                             val intent = Intent(this@MainActivity, LoginActivity::class.java)
                             startActivity(intent)
                             finish()

@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import br.com.adrianofpinheiro.trabalhokotlin.R
+import br.com.adrianofpinheiro.trabalhokotlin.extensions.toast
 import br.com.adrianofpinheiro.trabalhokotlin.ui.activitys.MainActivity
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.android.synthetic.main.activity_login.*
@@ -38,7 +39,7 @@ class LoginActivity : AppCompatActivity() {
                     if (it.isSuccessful) {
                         vaiParaLista()
                     } else {
-                        Toast.makeText(this@LoginActivity, it.exception?.message, Toast.LENGTH_LONG).show()
+                        toast(getString(R.string.msg_error_user))
                     }
                 }
             } else {

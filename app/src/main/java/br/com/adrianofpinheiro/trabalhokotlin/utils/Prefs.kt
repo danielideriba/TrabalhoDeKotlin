@@ -16,4 +16,8 @@ object Prefs {
     var tabIdx: Int
         get() = getInt("tabIdx")
         set(value) = setInt("tabIdx",value)
+
+    var saveToken: String
+        get() = getString("token")
+        set(value) = setString("token",value)
 }

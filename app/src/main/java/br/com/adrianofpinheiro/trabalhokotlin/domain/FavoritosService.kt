@@ -30,4 +30,10 @@ object FavoritosService {
         return true
     }
 
+    fun deletarFav(carro: Carro): Boolean {
+        val dao = DatabaseManager.getCarroDAO()
+        dao.delete(carro)
+        return true
+    }
+
 }
